@@ -17,9 +17,16 @@ public class User {
 
     private String password;
 
-    private boolean isAdmin;
+    private UserRole userRole;
 
     public User() {
+    }
+
+    public User(String name, String username, String password, UserRole userRole) {
+        this.name = name;
+        this.username = username;
+        this.password = password;
+        this.userRole = userRole;
     }
 
     public UUID getId() {
@@ -54,11 +61,11 @@ public class User {
         this.password = password;
     }
 
-    public boolean isAdmin() {
-        return isAdmin;
+    public UserRole getUserRole() {
+        return userRole;
     }
 
-    public void setAdmin(boolean admin) {
-        isAdmin = admin;
+    public void setUserRole(UserRole userRole) {
+        this.userRole = userRole;
     }
 }

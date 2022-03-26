@@ -1,10 +1,29 @@
 package xwsbsep.bezbednostbackend.controller;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import xwsbsep.bezbednostbackend.model.User;
+import xwsbsep.bezbednostbackend.service.UserService;
 
 @RestController
 @RequestMapping(value = "api/users", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
+    private UserService userService;
+
+    @Autowired
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+
+    @PostMapping(value = "/login")
+    public ResponseEntity<Object> login(String username, String password){
+        User logedUser = userService.loggedIn(username, password);
+        if(logedUser != null){
+            return new ResponseEntity<>(logedUser, HttpStatus.OK);
+        }
+        return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+    }
 }
