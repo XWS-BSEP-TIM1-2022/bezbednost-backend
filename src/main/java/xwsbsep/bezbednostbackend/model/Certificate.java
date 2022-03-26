@@ -1,5 +1,6 @@
 package xwsbsep.bezbednostbackend.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -18,9 +19,11 @@ public class Certificate {
     @Column(unique = true)
     private String serialNumber;
 
-    private Date startDate;
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
+    private LocalDateTime startDate;
 
-    private Date endDate;
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
+    private LocalDateTime endDate;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.NO_ACTION)
@@ -36,8 +39,19 @@ public class Certificate {
 
     private String keystorePath;
 
-    public Certificate(){
+    public Certificate(){}
 
+    public Certificate(String serialNumber, LocalDateTime startDate, LocalDateTime endDate, Certificate parentCertificate,
+                       boolean isCA, boolean isRevoked, User subject, String keystorePath) {
+        this.id = id;
+        this.serialNumber = serialNumber;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.parentCertificate = parentCertificate;
+        this.isCA = isCA;
+        this.isRevoked = isRevoked;
+        this.subject = subject;
+        this.keystorePath = keystorePath;
     }
 
     public UUID getId() {
@@ -56,19 +70,19 @@ public class Certificate {
         this.serialNumber = serialNumber;
     }
 
-    public Date getStartDate() {
+    public LocalDateTime getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(Date startDate) {
+    public void setStartDate(LocalDateTime startDate) {
         this.startDate = startDate;
     }
 
-    public Date getEndDate() {
+    public LocalDateTime getEndDate() {
         return endDate;
     }
 
-    public void setEndDate(Date endDate) {
+    public void setEndDate(LocalDateTime endDate) {
         this.endDate = endDate;
     }
 
