@@ -9,6 +9,7 @@ import xwsbsep.bezbednostbackend.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Collection;
 
 @Service
 public class UserService {
@@ -28,6 +29,10 @@ public class UserService {
             return user;
         }
         return null;
+    }
+
+    public Collection<User> getAll(){
+        return userRepository.findAll();
     }
 
     private String hash(String data){

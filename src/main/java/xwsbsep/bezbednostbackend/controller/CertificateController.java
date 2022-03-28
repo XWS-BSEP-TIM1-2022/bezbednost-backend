@@ -4,10 +4,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import xwsbsep.bezbednostbackend.dto.NewCertificateDto;
 import xwsbsep.bezbednostbackend.model.Certificate;
 import xwsbsep.bezbednostbackend.service.CertificateService;
 
@@ -28,6 +26,12 @@ public class CertificateController {
     public ResponseEntity<Collection<Certificate>> getAllUsersCertificates(@PathVariable UUID id){
         Collection<Certificate> retVal = certificateService.getUsersCertificates(id);
         return new ResponseEntity<>(retVal, HttpStatus.OK);
+    }
+
+    @PostMapping()
+    public ResponseEntity<Certificate> createNewCertificate(@RequestBody NewCertificateDto newCertificate){
+        Certificate certificate = certificateService.createNewCertificate(newCertificate);
+        return new ResponseEntity<>(certificate, HttpStatus.CREATED);
     }
 
 }

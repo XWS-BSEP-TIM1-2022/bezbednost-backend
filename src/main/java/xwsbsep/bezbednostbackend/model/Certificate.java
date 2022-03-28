@@ -3,6 +3,7 @@ package xwsbsep.bezbednostbackend.model;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.util.UUID;
 
 @Entity
 @Table(name="CERTIFICATES")
+@Proxy(lazy = false)
 public class Certificate {
     @Id
     @GeneratedValue

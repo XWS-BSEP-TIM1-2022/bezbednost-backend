@@ -2,15 +2,14 @@ package xwsbsep.bezbednostbackend.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import xwsbsep.bezbednostbackend.dto.NewCertificateDto;
 import xwsbsep.bezbednostbackend.model.Certificate;
 import xwsbsep.bezbednostbackend.model.User;
 import xwsbsep.bezbednostbackend.repository.CertificateRepository;
 import xwsbsep.bezbednostbackend.repository.UserRepository;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.UUID;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 @Service
 public class CertificateService {
@@ -21,6 +20,24 @@ public class CertificateService {
     public CertificateService(CertificateRepository certificateRepository, UserRepository userRepository){
         this.certificateRepository = certificateRepository;
         this.userRepository = userRepository;
+    }
+
+    public Certificate createNewCertificate(NewCertificateDto newCertificate){
+        Random rand = new Random();
+
+        Certificate certificate = new Certificate();
+        certificate.setParentCertificate(certificateRepository.getById(UUID.fromString(newCertificate.parentId)));
+        certificate.setCA(newCertificate.isCA);
+        certificate.setStartDate(newCertificate.startDate);
+        certificate.setEndDate(newCertificate.endDate);
+        certificate.setRevoked(false);
+        certificate.setKeystorePath("SREDICE SE U BUDUCE");
+        certificate.setSerialNumber(rand.nextInt(5000) + "-" + rand.nextInt(5000));
+        certificate.setSubject(userRepository.getUserById(UUID.fromString(newCertificate.userId)));
+
+        certificateRepository.save(certificate);
+
+        return certificate;
     }
 
     public Collection<Certificate> getUsersCertificates(UUID id){

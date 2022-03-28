@@ -8,6 +8,8 @@ import org.springframework.web.bind.annotation.*;
 import xwsbsep.bezbednostbackend.model.User;
 import xwsbsep.bezbednostbackend.service.UserService;
 
+import java.util.Collection;
+
 @RestController
 @RequestMapping(value = "api/users", produces = MediaType.APPLICATION_JSON_VALUE)
 public class UserController {
@@ -25,5 +27,10 @@ public class UserController {
             return new ResponseEntity<>(logedUser, HttpStatus.OK);
         }
         return new ResponseEntity<>("", HttpStatus.BAD_REQUEST);
+    }
+
+    @GetMapping
+    public ResponseEntity<Collection<User>> getUsers(){
+        return new ResponseEntity<>(userService.getAll(), HttpStatus.OK);
     }
 }
