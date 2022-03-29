@@ -19,14 +19,20 @@ public class User {
 
     private UserRole userRole;
 
+    private String country;
+
+    private String organization;
+
     public User() {
     }
 
-    public User(String name, String username, String password, UserRole userRole) {
+    public User(String name, String username, String password, UserRole userRole, String country, String organization) {
         this.name = name;
         this.username = username;
         this.password = password;
         this.userRole = userRole;
+        this.country = country;
+        this.organization = organization;
     }
 
     public UUID getId() {
@@ -67,5 +73,21 @@ public class User {
 
     public void setUserRole(UserRole userRole) {
         this.userRole = userRole;
+    }
+
+    public String getCountry() {
+        return country;
+    }
+
+    public void setCountry(String country) {
+        this.country = country;
+    }
+
+    public String getOrganization() {
+        return organization;
+    }
+
+    public void setOrganization(String organization) {
+        this.organization = organization;
     }
 }

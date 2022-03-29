@@ -16,4 +16,5 @@ public class NewCertificateDto {
     public LocalDateTime startDate;
     public LocalDateTime endDate;
     public boolean isCA;
+    public boolean isSelfSigned;
 }

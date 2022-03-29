@@ -1,5 +1,6 @@
 package xwsbsep.bezbednostbackend;
 
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -13,6 +14,7 @@ import xwsbsep.bezbednostbackend.repository.UserRepository;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Security;
 import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -28,6 +30,7 @@ public class BezbednostBackendApplication implements CommandLineRunner {
 										CertificateRepository certificateRepository) {
 		this.userRepository = userRepository;
 		this.certificateRepository = certificateRepository;
+		Security.addProvider(new BouncyCastleProvider());
 	}
 
 	public static void main(String[] args) {
@@ -37,11 +40,11 @@ public class BezbednostBackendApplication implements CommandLineRunner {
 
 	@Override
 	public void run(String... args) throws Exception {
-		User admin = new User("admin", "admin", hash("admin"), UserRole.ADMIN);
+		User admin = new User("admin", "admin", hash("admin"), UserRole.ADMIN, "Srbija", "UNS");
 		userRepository.save(admin);
-		User obican = new User("obican", "obican", hash("obican"), UserRole.USER);
+		User obican = new User("obican", "obican", hash("obican"), UserRole.USER, "Srbija","FTN" );
 		userRepository.save(obican);
-		User inter = new User("inter", "inter", hash("inter"), UserRole.INTER);
+		User inter = new User("inter", "inter", hash("inter"), UserRole.INTER, "Srbija", "FTN");
 		userRepository.save(inter);
 
 		Certificate root = new Certificate(
