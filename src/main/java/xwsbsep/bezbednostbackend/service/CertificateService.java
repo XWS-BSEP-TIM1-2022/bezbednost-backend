@@ -24,10 +24,8 @@ import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 @Service
@@ -62,7 +60,10 @@ public class CertificateService {
             String parentPass = getPassword(certificate.getParentCertificate().getKeystorePath());
             PrivateKey privateKey =  keyStoreReader.readPrivateKey(certificate.getParentCertificate().getKeystorePath(), parentPass, certificate.getParentCertificate().getSerialNumber(), parentPass);
             issuerData = generateIssuerData(privateKey, certificate.getParentCertificate().getSubject());
+            if (!ValidateCertificateOnCreation(certificate.getParentCertificate().getId()))
+                return null;
         }
+
         certificateRepository.save(certificate);
 
         SubjectData subjectData = generateSubjectData(keyPairSubject.getPublic(), certificate);
@@ -107,6 +108,7 @@ public class CertificateService {
         }
         certificate.setSerialNumber(rand.nextInt(50000) + "");
         certificate.setSubject(userRepository.getUserById(UUID.fromString(newCertificate.userId)));
+
         return certificate;
     }
 
@@ -143,6 +145,41 @@ public class CertificateService {
             }
         }
         return retVal;
+    }
+
+    public boolean ValidateCertificateOnCreation(UUID id){
+        Certificate certificate = certificateRepository.getById(id);
+        while (certificate.getParentCertificate() != null){
+            if (certificate.isRevoked())
+                return false;
+            //posle za proveru radnog sertifikata se proveri i da li je poceo da vazi
+            if (certificate.getEndDate().isBefore(LocalDateTime.now())){
+                return false;
+            }
+            java.security.cert.Certificate certificateKS =
+                    keyStoreReader.readCertificate(
+                            certificate.getKeystorePath(),
+                            getPassword(certificate.getKeystorePath()),
+                            certificate.getSerialNumber());
+
+            java.security.cert.Certificate parentCertificateKS = keyStoreReader.readCertificate(
+                    certificate.getParentCertificate().getKeystorePath(),
+                    getPassword(certificate.getParentCertificate().getKeystorePath()),
+                    certificate.getParentCertificate().getSerialNumber());
+            try {
+                certificateKS.verify(parentCertificateKS.getPublicKey());
+            }catch (SignatureException | CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException e){
+                return false;
+            }
+            certificate = certificate.getParentCertificate();
+        }
+        if (certificate.isRevoked())
+            return false;
+        //posle za proveru radnog sertifikata se proveri i da li je poceo da vazi
+        if (certificate.getEndDate().isBefore(LocalDateTime.now())){
+            return false;
+        }
+        return true;
     }
 
     private X509Certificate generateCertificate(SubjectData subjectData, IssuerData issuerData) {
