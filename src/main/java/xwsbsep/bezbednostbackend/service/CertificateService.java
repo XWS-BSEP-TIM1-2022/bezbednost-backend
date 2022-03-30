@@ -182,6 +182,12 @@ public class CertificateService {
         return true;
     }
 
+    public Certificate revokeCertificate(UUID id){
+        Certificate certificate = certificateRepository.getById(id);
+        certificate.setRevoked(true);
+        return certificateRepository.save(certificate);
+    }
+
     private X509Certificate generateCertificate(SubjectData subjectData, IssuerData issuerData) {
         try {
 

@@ -36,4 +36,11 @@ public class CertificateController {
         return new ResponseEntity<>(certificate, HttpStatus.CREATED);
     }
 
+    @PatchMapping(path = "/{id}")
+    public ResponseEntity<Certificate> revokeCertificate(@PathVariable UUID id, @RequestBody Certificate certificate) {
+        Certificate revokedCertificate = certificateService.revokeCertificate(id);
+        if (revokedCertificate == null)
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(revokedCertificate, HttpStatus.OK);
+    }
 }
