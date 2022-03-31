@@ -7,7 +7,6 @@ import org.hibernate.annotations.Proxy;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 @Entity
@@ -33,7 +32,7 @@ public class Certificate {
 
     private boolean isCA;
 
-    private boolean isRevoked;
+    private boolean revoked;
 
     @ManyToOne
     @OnDelete(action = OnDeleteAction.NO_ACTION)
@@ -44,14 +43,14 @@ public class Certificate {
     public Certificate(){}
 
     public Certificate(String serialNumber, LocalDateTime startDate, LocalDateTime endDate, Certificate parentCertificate,
-                       boolean isCA, boolean isRevoked, User subject, String keystorePath) {
+                       boolean isCA, boolean revoked, User subject, String keystorePath) {
         this.id = id;
         this.serialNumber = serialNumber;
         this.startDate = startDate;
         this.endDate = endDate;
         this.parentCertificate = parentCertificate;
         this.isCA = isCA;
-        this.isRevoked = isRevoked;
+        this.revoked = revoked;
         this.subject = subject;
         this.keystorePath = keystorePath;
     }
@@ -105,11 +104,11 @@ public class Certificate {
     }
 
     public boolean isRevoked() {
-        return isRevoked;
+        return revoked;
     }
 
     public void setRevoked(boolean revoked) {
-        isRevoked = revoked;
+        this.revoked = revoked;
     }
 
     public User getSubject() {

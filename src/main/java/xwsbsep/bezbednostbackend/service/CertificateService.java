@@ -10,6 +10,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 import xwsbsep.bezbednostbackend.dto.NewCertificateDto;
 import xwsbsep.bezbednostbackend.model.Certificate;
@@ -36,16 +37,21 @@ public class CertificateService {
     private KeyStoreReader keyStoreReader;
 
     //smisliti gde da se izmesti
-    private String passRoot = "pass1";
-    private String passInter = "pass2";
-    private String passEnd = "pass3";
+    private final String passRoot;
+    private final String passInter;
+    private final String passEnd;
 
     @Autowired
-    public CertificateService(CertificateRepository certificateRepository, UserRepository userRepository){
+    public CertificateService(CertificateRepository certificateRepository,
+                              UserRepository userRepository,
+                              Environment environment){
         this.certificateRepository = certificateRepository;
         this.userRepository = userRepository;
         this.keyStoreReader = new KeyStoreReader();
         this.keyStoreWriter = new KeyStoreWriter();
+        this.passRoot = environment.getProperty("KeyStoreAdmin");
+        this.passInter = environment.getProperty("KeyStoreInter");
+        this.passEnd = environment.getProperty("KeyStoreUser");
     }
 
     public Certificate createNewCertificate(NewCertificateDto newCertificate){
@@ -230,8 +236,8 @@ public class CertificateService {
     private IssuerData generateIssuerData(PrivateKey issuerKey, User parent) {
         X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
         builder.addRDN(BCStyle.CN, parent.getName());
-        builder.addRDN(BCStyle.O, parent.getCountry());
-        builder.addRDN(BCStyle.C, parent.getOrganization());
+        builder.addRDN(BCStyle.C, parent.getCountry());
+        builder.addRDN(BCStyle.O, parent.getOrganization());
         builder.addRDN(BCStyle.UID, parent.getId().toString());
 
         return new IssuerData(builder.build(), issuerKey);
