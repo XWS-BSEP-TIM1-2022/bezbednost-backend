@@ -11,4 +11,6 @@ import java.util.UUID;
 public interface CertificateRepository extends JpaRepository<Certificate, UUID> {
     @Query("select c from Certificate c where c.subject.id = ?1")
     List<Certificate> findAllBySubjectId(UUID subjectId);
+
+    Certificate findBySerialNumber(String serialNumber);
 }

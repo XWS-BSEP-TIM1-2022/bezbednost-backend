@@ -43,4 +43,9 @@ public class CertificateController {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         return new ResponseEntity<>(revokedCertificate, HttpStatus.OK);
     }
+
+    @GetMapping("/verify-certificate/{serialNumber}")
+    public ResponseEntity<Boolean> verifyCertificate(@PathVariable String serialNumber){
+        return ResponseEntity.ok(certificateService.ValidateCertificateOnCreation(null, serialNumber));
+    }
 }

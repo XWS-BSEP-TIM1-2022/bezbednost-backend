@@ -44,7 +44,7 @@ public class CertificateService {
     @Autowired
     public CertificateService(CertificateRepository certificateRepository,
                               UserRepository userRepository,
-                              Environment environment){
+                              Environment environment) {
         this.certificateRepository = certificateRepository;
         this.userRepository = userRepository;
         this.keyStoreReader = new KeyStoreReader();
@@ -54,19 +54,19 @@ public class CertificateService {
         this.passEnd = environment.getProperty("KeyStoreUser");
     }
 
-    public Certificate createNewCertificate(NewCertificateDto newCertificate){
+    public Certificate createNewCertificate(NewCertificateDto newCertificate) {
         Certificate certificate;
         IssuerData issuerData;
         KeyPair keyPairSubject = generateKeyPair();
-        if(newCertificate.isSelfSigned) {
+        if (newCertificate.isSelfSigned) {
             certificate = CreateSelfSigned(newCertificate);
             issuerData = generateIssuerData(keyPairSubject.getPrivate(), certificate.getSubject());
-        }else{
+        } else {
             certificate = CreateCertificate(newCertificate);
             String parentPass = getPassword(certificate.getParentCertificate().getKeystorePath());
-            PrivateKey privateKey =  keyStoreReader.readPrivateKey(certificate.getParentCertificate().getKeystorePath(), parentPass, certificate.getParentCertificate().getSerialNumber(), parentPass);
+            PrivateKey privateKey = keyStoreReader.readPrivateKey(certificate.getParentCertificate().getKeystorePath(), parentPass, certificate.getParentCertificate().getSerialNumber(), parentPass);
             issuerData = generateIssuerData(privateKey, certificate.getParentCertificate().getSubject());
-            if (!ValidateCertificateOnCreation(certificate.getParentCertificate().getId()))
+            if (!ValidateCertificateOnCreation(certificate.getParentCertificate().getId(), null))
                 return null;
         }
 
@@ -77,20 +77,20 @@ public class CertificateService {
 
         String pass = getPassword(certificate.getKeystorePath());
         keyStoreWriter.loadKeyStore(certificate.getKeystorePath(), pass.toCharArray());
-        keyStoreWriter.write(certificate.getSerialNumber(), keyPairSubject.getPrivate(), pass.toCharArray(),cert);
-        keyStoreWriter.saveKeyStore(certificate.getKeystorePath(), pass.toCharArray() );
+        keyStoreWriter.write(certificate.getSerialNumber(), keyPairSubject.getPrivate(), pass.toCharArray(), cert);
+        keyStoreWriter.saveKeyStore(certificate.getKeystorePath(), pass.toCharArray());
 
         return certificate;
     }
 
-    private Certificate CreateSelfSigned(NewCertificateDto newCertificate){
+    private Certificate CreateSelfSigned(NewCertificateDto newCertificate) {
         Random rand = new Random();
         Certificate certificate = new Certificate();
         certificate.setCA(true);
         certificate.setStartDate(newCertificate.startDate);
         certificate.setEndDate(newCertificate.endDate);
         certificate.setRevoked(false);
-        if(newCertificate.isSelfSigned) {
+        if (newCertificate.isSelfSigned) {
             certificate.setKeystorePath("root.jks");
         }
         certificate.setSerialNumber(rand.nextInt(50000) + "");
@@ -98,7 +98,7 @@ public class CertificateService {
         return certificate;
     }
 
-    private Certificate CreateCertificate(NewCertificateDto newCertificate){
+    private Certificate CreateCertificate(NewCertificateDto newCertificate) {
         Random rand = new Random();
         Certificate certificate = new Certificate();
         Certificate parent = certificateRepository.getById(UUID.fromString(newCertificate.parentId));
@@ -107,9 +107,9 @@ public class CertificateService {
         certificate.setStartDate(newCertificate.startDate);
         certificate.setEndDate(newCertificate.endDate);
         certificate.setRevoked(false);
-        if(newCertificate.isCA){
+        if (newCertificate.isCA) {
             certificate.setKeystorePath("intermediate.jks");
-        }else{
+        } else {
             certificate.setKeystorePath("end.jks");
         }
         certificate.setSerialNumber(rand.nextInt(50000) + "");
@@ -119,10 +119,9 @@ public class CertificateService {
     }
 
 
-
-    public Collection<Certificate> getUsersCertificates(UUID id){
+    public Collection<Certificate> getUsersCertificates(UUID id) {
         User user = userRepository.getUserById(id);
-        if(user.getId() == null)
+        if (user.getId() == null)
             return null;
         else if (user.getUserRole().toString().equals("USER"))
             return certificateRepository.findAllBySubjectId(id);
@@ -130,36 +129,47 @@ public class CertificateService {
             return certificateRepository.findAll();
 
         List<Certificate> retVal = new ArrayList<Certificate>();
-        for (Certificate certificate: certificateRepository.findAll()){
+        for (Certificate certificate : certificateRepository.findAll()) {
             if (certificate.getSubject().getId().equals(id)) {
                 retVal.add(certificate);
                 continue;
             }
 
-            if (certificate.getParentCertificate() != null){
+            if (certificate.getParentCertificate() != null) {
                 Certificate temp = certificate;
-                do{
+                do {
                     if (temp.getParentCertificate() == null) { //Zavisi kako cemo da oznacimo poslednji
                         break;
                     }
-                    if (temp.getSubject().getId().equals(id)){
+                    if (temp.getSubject().getId().equals(id)) {
                         retVal.add(certificate);
                         break;
                     }
                     temp = temp.getParentCertificate();
-                }while(true);
+                } while (true);
             }
         }
         return retVal;
     }
 
-    public boolean ValidateCertificateOnCreation(UUID id){
-        Certificate certificate = certificateRepository.getById(id);
-        while (certificate.getParentCertificate() != null){
+    public boolean ValidateCertificateOnCreation(UUID id, String serialNumber) {
+        Certificate certificate;
+
+        if (serialNumber == null) {
+            certificate = certificateRepository.getById(id);
+        }
+        else{
+            certificate = certificateRepository.findBySerialNumber(serialNumber);
+        }
+
+        if (certificate == null) {
+            return false;
+        }
+        while (certificate.getParentCertificate() != null) {
             if (certificate.isRevoked())
                 return false;
             //posle za proveru radnog sertifikata se proveri i da li je poceo da vazi
-            if (certificate.getEndDate().isBefore(LocalDateTime.now())){
+            if (certificate.getEndDate().isBefore(LocalDateTime.now())) {
                 return false;
             }
             java.security.cert.Certificate certificateKS =
@@ -174,7 +184,7 @@ public class CertificateService {
                     certificate.getParentCertificate().getSerialNumber());
             try {
                 certificateKS.verify(parentCertificateKS.getPublicKey());
-            }catch (SignatureException | CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException e){
+            } catch (SignatureException | CertificateException | NoSuchAlgorithmException | InvalidKeyException | NoSuchProviderException e) {
                 return false;
             }
             certificate = certificate.getParentCertificate();
@@ -182,13 +192,15 @@ public class CertificateService {
         if (certificate.isRevoked())
             return false;
         //posle za proveru radnog sertifikata se proveri i da li je poceo da vazi
-        if (certificate.getEndDate().isBefore(LocalDateTime.now())){
+        if (certificate.getEndDate().
+
+                isBefore(LocalDateTime.now())) {
             return false;
         }
         return true;
     }
 
-    public Certificate revokeCertificate(UUID id){
+    public Certificate revokeCertificate(UUID id) {
         Certificate certificate = certificateRepository.getById(id);
         certificate.setRevoked(true);
         return certificateRepository.save(certificate);
@@ -225,11 +237,14 @@ public class CertificateService {
         return null;
     }
 
-    private String getPassword(String path){
-        switch (path){
-            case "root.jks": return passRoot;
-            case "intermediate.jks": return passInter;
-            default: return passEnd;
+    private String getPassword(String path) {
+        switch (path) {
+            case "root.jks":
+                return passRoot;
+            case "intermediate.jks":
+                return passInter;
+            default:
+                return passEnd;
         }
     }
 
@@ -244,15 +259,15 @@ public class CertificateService {
     }
 
     private SubjectData generateSubjectData(PublicKey publicKey, Certificate certificate) {
-            Date startDate = Date.from(certificate.getStartDate().atZone(ZoneId.systemDefault()).toInstant());
-            Date endDate = Date.from(certificate.getEndDate().atZone(ZoneId.systemDefault()).toInstant());
+        Date startDate = Date.from(certificate.getStartDate().atZone(ZoneId.systemDefault()).toInstant());
+        Date endDate = Date.from(certificate.getEndDate().atZone(ZoneId.systemDefault()).toInstant());
 
-            X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
-            builder.addRDN(BCStyle.CN, certificate.getSubject().getName());
-            builder.addRDN(BCStyle.O, certificate.getSubject().getOrganization());
-            builder.addRDN(BCStyle.C, certificate.getSubject().getCountry());
-            builder.addRDN(BCStyle.UID, certificate.getSubject().getId().toString());
-            return new SubjectData(publicKey, builder.build(), certificate.getSerialNumber(), startDate, endDate);
+        X500NameBuilder builder = new X500NameBuilder(BCStyle.INSTANCE);
+        builder.addRDN(BCStyle.CN, certificate.getSubject().getName());
+        builder.addRDN(BCStyle.O, certificate.getSubject().getOrganization());
+        builder.addRDN(BCStyle.C, certificate.getSubject().getCountry());
+        builder.addRDN(BCStyle.UID, certificate.getSubject().getId().toString());
+        return new SubjectData(publicKey, builder.build(), certificate.getSerialNumber(), startDate, endDate);
     }
 
     private KeyPair generateKeyPair() {
