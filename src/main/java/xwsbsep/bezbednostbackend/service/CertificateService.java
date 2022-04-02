@@ -20,6 +20,9 @@ import xwsbsep.bezbednostbackend.model.data.SubjectData;
 import xwsbsep.bezbednostbackend.repository.CertificateRepository;
 import xwsbsep.bezbednostbackend.repository.UserRepository;
 
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
@@ -282,5 +285,22 @@ public class CertificateService {
             e.printStackTrace();
         }
         return null;
+    }
+
+    public byte[] download(String serialNumber) throws Exception {
+        Certificate certificate = certificateRepository.findBySerialNumber(serialNumber);
+        java.security.cert.Certificate certificate1 = keyStoreReader.readCertificate(certificate.getKeystorePath(), getPassword(certificate.getKeystorePath()), serialNumber);
+        return certificate1.getEncoded();
+
+        /*try {
+            FileOutputStream out = new FileOutputStream("cert.cer");
+            out.write(certificate1.getEncoded());
+            out.close();
+        } catch (FileNotFoundException | CertificateEncodingException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+
     }
 }

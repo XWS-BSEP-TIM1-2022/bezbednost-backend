@@ -9,6 +9,7 @@ import xwsbsep.bezbednostbackend.dto.NewCertificateDto;
 import xwsbsep.bezbednostbackend.model.Certificate;
 import xwsbsep.bezbednostbackend.service.CertificateService;
 
+import java.security.cert.CertificateEncodingException;
 import java.util.Collection;
 import java.util.UUID;
 
@@ -47,5 +48,14 @@ public class CertificateController {
     @GetMapping("/verify-certificate/{serialNumber}")
     public ResponseEntity<Boolean> verifyCertificate(@PathVariable String serialNumber){
         return ResponseEntity.ok(certificateService.ValidateCertificateOnCreation(null, serialNumber));
+    }
+
+    @GetMapping(value = "/download/{serialNumber}", produces = MediaType.APPLICATION_OCTET_STREAM_VALUE)
+    public ResponseEntity<byte[]> download(@PathVariable String serialNumber){
+        try {
+            return ResponseEntity.ok(certificateService.download(serialNumber));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
     }
 }
