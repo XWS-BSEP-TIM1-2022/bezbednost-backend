@@ -17,4 +17,8 @@ public class NewCertificateDto {
     public LocalDateTime endDate;
     public boolean isCA;
     public boolean isSelfSigned;
+    public boolean clientAuth;
+    public boolean serverAuth;
+    public boolean emailProtection;
+    public boolean codeSigning;
 }

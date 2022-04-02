@@ -27,7 +27,6 @@ public class KeyStoreReader {
             KeyStore ks = KeyStore.getInstance("JKS", "SUN");
             BufferedInputStream in = new BufferedInputStream(new FileInputStream(keyStoreFile));
             ks.load(in, keyStorePass.toCharArray());
-
             if(ks.isKeyEntry(alias)) {
                 Certificate cert = ks.getCertificate(alias);
                 return cert;

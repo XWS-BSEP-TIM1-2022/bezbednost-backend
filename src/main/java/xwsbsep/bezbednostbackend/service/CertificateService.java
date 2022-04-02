@@ -1,7 +1,10 @@
 package xwsbsep.bezbednostbackend.service;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
+import org.bouncycastle.asn1.x509.*;
+import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
@@ -11,6 +14,7 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.stereotype.Service;
 import xwsbsep.bezbednostbackend.dto.NewCertificateDto;
 import xwsbsep.bezbednostbackend.model.Certificate;
@@ -28,6 +32,7 @@ import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.security.cert.X509Extension;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -76,7 +81,7 @@ public class CertificateService {
         certificateRepository.save(certificate);
 
         SubjectData subjectData = generateSubjectData(keyPairSubject.getPublic(), certificate);
-        X509Certificate cert = generateCertificate(subjectData, issuerData);
+        X509Certificate cert = generateCertificate(subjectData, issuerData, newCertificate);
 
         String pass = getPassword(certificate.getKeystorePath());
         keyStoreWriter.loadKeyStore(certificate.getKeystorePath(), pass.toCharArray());
@@ -209,7 +214,7 @@ public class CertificateService {
         return certificateRepository.save(certificate);
     }
 
-    private X509Certificate generateCertificate(SubjectData subjectData, IssuerData issuerData) {
+    private X509Certificate generateCertificate(SubjectData subjectData, IssuerData issuerData, NewCertificateDto certificateDto) {
         try {
 
             JcaContentSignerBuilder builder = new JcaContentSignerBuilder("SHA256WithRSAEncryption");
@@ -221,6 +226,15 @@ public class CertificateService {
                     subjectData.getEndDate(),
                     subjectData.getX500name(),
                     subjectData.getPublicKey());
+
+            certGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(certificateDto.isCA() || certificateDto.isSelfSigned()));
+            if(!certificateDto.isSelfSigned() && !certificateDto.isCA()){
+                certGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
+                certGen.addExtension(Extension.extendedKeyUsage, true, new ExtendedKeyUsage(getKeyPurposeIds(certificateDto.clientAuth,
+                        certificateDto.serverAuth, certificateDto.emailProtection, certificateDto.codeSigning)));
+            }else{
+                certGen.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.cRLSign | KeyUsage.keyCertSign | KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
+            }
             X509CertificateHolder certHolder = certGen.build(contentSigner);
 
             JcaX509CertificateConverter certConverter = new JcaX509CertificateConverter();
@@ -236,8 +250,19 @@ public class CertificateService {
             e.printStackTrace();
         } catch (CertificateException e) {
             e.printStackTrace();
+        } catch (CertIOException e) {
+            e.printStackTrace();
         }
         return null;
+    }
+
+    private KeyPurposeId[] getKeyPurposeIds(boolean clientAuth, boolean serverAuth, boolean emailProtection, boolean codeSigning){
+        ArrayList<KeyPurposeId> keyPurposeIdArrayList = new ArrayList<>();
+        if(clientAuth) keyPurposeIdArrayList.add(KeyPurposeId.id_kp_clientAuth);
+        if(serverAuth) keyPurposeIdArrayList.add(KeyPurposeId.id_kp_serverAuth);
+        if(emailProtection) keyPurposeIdArrayList.add(KeyPurposeId.id_kp_emailProtection);
+        if(codeSigning) keyPurposeIdArrayList.add(KeyPurposeId.id_kp_codeSigning);
+        return keyPurposeIdArrayList.toArray(new KeyPurposeId[0]);
     }
 
     private String getPassword(String path) {
