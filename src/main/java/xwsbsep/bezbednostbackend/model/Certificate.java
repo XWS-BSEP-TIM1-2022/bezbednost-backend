@@ -34,6 +34,11 @@ public class Certificate {
 
     private boolean revoked;
 
+    private String revokeReason;
+
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm")
+    private LocalDateTime revocationDateTime;
+
     @ManyToOne
     @OnDelete(action = OnDeleteAction.NO_ACTION)
     private User subject;
@@ -125,5 +130,21 @@ public class Certificate {
 
     public void setKeystorePath(String keystorePath) {
         this.keystorePath = keystorePath;
+    }
+
+    public String getRevokeReason() {
+        return revokeReason;
+    }
+
+    public void setRevokeReason(String revokeReason) {
+        this.revokeReason = revokeReason;
+    }
+
+    public LocalDateTime getRevocationDateTime() {
+        return revocationDateTime;
+    }
+
+    public void setRevocationDateTime(LocalDateTime revocationDateTime) {
+        this.revocationDateTime = revocationDateTime;
     }
 }

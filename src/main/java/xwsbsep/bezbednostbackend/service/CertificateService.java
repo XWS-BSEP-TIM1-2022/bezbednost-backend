@@ -1,6 +1,5 @@
 package xwsbsep.bezbednostbackend.service;
 
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.*;
@@ -14,7 +13,6 @@ import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
-import org.springframework.data.repository.query.QueryLookupStrategy;
 import org.springframework.stereotype.Service;
 import xwsbsep.bezbednostbackend.dto.NewCertificateDto;
 import xwsbsep.bezbednostbackend.model.Certificate;
@@ -24,15 +22,11 @@ import xwsbsep.bezbednostbackend.model.data.SubjectData;
 import xwsbsep.bezbednostbackend.repository.CertificateRepository;
 import xwsbsep.bezbednostbackend.repository.UserRepository;
 
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.math.BigInteger;
 import java.security.*;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.security.cert.X509Extension;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
@@ -208,10 +202,19 @@ public class CertificateService {
         return true;
     }
 
-    public Certificate revokeCertificate(UUID id) {
+    public Certificate revokeCertificate(UUID id, String revokeReason) {
         Certificate certificate = certificateRepository.getById(id);
         certificate.setRevoked(true);
+        certificate.setRevokeReason(revokeReason);
+        certificate.setRevocationDateTime(LocalDateTime.now());
+        revokeChildCertificatesOfParent(id);
         return certificateRepository.save(certificate);
+    }
+
+    private void revokeChildCertificatesOfParent(UUID parentId) {
+        for (Certificate childCertificate : certificateRepository.findAllUnrevokedChildrenByParentId(parentId)) {
+            revokeCertificate(childCertificate.getId(), "unspecified (0)");
+        }
     }
 
     private X509Certificate generateCertificate(SubjectData subjectData, IssuerData issuerData, NewCertificateDto certificateDto) {
